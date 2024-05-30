@@ -7,17 +7,13 @@ require("dotenv").config({path: "./config/.env"});
 require("./database/connection/mongodb");
 const port = process.env.PORT || 9000;
 
-// -------------- require routes -----------------
-const userRoutes = require("./src/routes/userRoutes");
-
 // use middleware 
 app.use(BodyParser.json());
 
-app.get("/", (req,res)=>{
-   res.send("hello i am voting app");
-});
+// -------------- require routes -----------------
+const userRoutes = require("./src/routes/userRoutes");
 
-// ----------- routes ---------------
+app.use("/user", userRoutes);
 
 
 app.listen(port, ()=>{
