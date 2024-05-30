@@ -92,8 +92,12 @@ router.post("/vote/:candidateID", jwtAuthMiddleware, async (req, res) => {
         Candidate.votes.push({ user: userId });
         Candidate.voteCount++;
         await Candidate.save();
-    } catch (error) {
 
+        User.isVoted = true;
+        await user.save();
+    } catch (error) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
