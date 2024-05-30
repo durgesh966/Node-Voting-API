@@ -12,8 +12,10 @@ app.use(BodyParser.json());
 
 // -------------- require routes -----------------
 const userRoutes = require("./src/routes/userRoutes");
+const candidateRoute = require("./src/routes/candidateRoute")
 
 app.use("/user", userRoutes);
+app.use("/candidate", candidateRoute);
 
 
 app.listen(port, ()=>{

@@ -1,56 +1,75 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../../database/models/user');
-const { jwtAuthMiddleware, generateToken } = require('../controller/jwt');
+const Candidate = require('../../database/models/candidate');
+const { jwtAuthMiddleware } = require('../controller/jwt');
+const checkIsAdmin = require('../controller/adminRole'); // Corrected function name
 
-// Profile route
-router.get('/profile', jwtAuthMiddleware, async (req, res) => {
+// POST route to add a candidate
+router.post('/', jwtAuthMiddleware, async (req, res) => {
     try {
-        const userData = req.user;
-        console.log("User Data: ", userData);
-
-        const userId = userData.id;
-        const user = await User.findById(userId);
-
-        res.status(200).json({ user });
+        if (! await checkIsAdmin(req.user.id)) {
+            return res.status(403).json({ message: "Only admins can do this" });
+        }
+        const data = req.body;
+        const newCandidate = new Candidate(data);
+        const response = await newCandidate.save();
+        console.log('Data saved');
+        res.status(200).json({ response });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-// GET method to get the person
-router.get('/', jwtAuthMiddleware, async (req, res) => {
+// PUT route to update a candidate
+router.put('/:candidateID', jwtAuthMiddleware, async (req, res) => {
     try {
-        const data = await Person.find();
-        console.log('data fetched');
-        res.status(200).json(data);
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
-router.put('/profile/password', jwtAuthMiddleware, async (req, res) => {
-    try {
-        const userId = req.user; // Extract the id from the URL parameter
-        const { currentPassword, newPassword } = req.body;
-
-        const user = await User.findById(userId);
-
-        // If password does not match, return error
-        if (!(await user.comparePassword(currentPassword))) {
-            return res.status(401).json({ error: 'Invalid adhar Number or password' });
+        if (! await checkIsAdmin(req.user)) {
+            return res.status(403).json({ message: "Only admins can do this" });
         }
-        user.password = newPassword;
-        await user.save();
 
-        console.log('password updated successfully');
-        res.status(200).json({ message: "password updated" });
+        const candidateId = req.params.candidateID;
+        const updateCandidateData = req.body;
+        const response = await Candidate.findByIdAndUpdate(candidateId, updateCandidateData, {
+            new: true,
+            runValidators: true
+        });
+
+        if (!response) {
+            return res.status(404).json({ message: "Candidate not found" });
+        }
+        console.log("Candidate update successful");
+        res.status(200).json({ response });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-module.exports = router;
+// DELETE route to delete a candidate
+router.delete('/:candidateID', jwtAuthMiddleware, async (req, res) => {
+    try {
+        if (! await checkIsAdmin(req.user)) {
+            return res.status(403).json({ message: "Only admins can do this" });
+        }
+
+        const candidateId = req.params.candidateID;
+        const response = await Candidate.findByIdAndDelete(candidateId);
+
+        if (!response) {
+            return res.status(404).json({ message: "Candidate not found" });
+        }
+        console.log("Candidate delete successful");
+        res.status(200).json({ response });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// ------------------ lets start voting -----------------
+router.post("/vote/:candidateID", jwtAuthMiddleware, async (req, res) => {
+  
+});
+
+module.exports = router; 
